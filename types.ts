@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> b462a0c3e1989d82e4e235195ce17108cf6ef656
 export enum AccountStatus {
   WATCHLIST = 'watchlist',
   PURCHASED = 'purchased',
@@ -8,11 +12,20 @@ export enum AccountStatus {
 export interface Account {
   id: number;
   identifier: string;
+<<<<<<< HEAD
   link?: string;
   status: AccountStatus;
   expected_price?: number;
   potential_income?: number;
   loss_reason?: string;
+=======
+  link: string;
+  status: AccountStatus;
+  expected_price: number | null;
+  potential_income: number | null;
+  loss_reason?: string;
+  // Specific credential fields
+>>>>>>> b462a0c3e1989d82e4e235195ce17108cf6ef656
   email?: string;
   password?: string;
   account_email?: string;
@@ -21,6 +34,7 @@ export interface Account {
   account_2nd_password?: string;
   notes?: string;
   created_at: string;
+<<<<<<< HEAD
   // Joins
   buy_price?: number;
   sell_price?: number;
@@ -59,4 +73,32 @@ export interface SellPayload {
 
 export interface LossPayload {
   loss_reason: string;
+=======
+}
+
+export interface Transaction {
+  id: number;
+  account_id: number;
+  buy_price: number | null;
+  sell_price: number | null;
+  transaction_date: string;
+}
+
+export interface AccountWithTransaction extends Account {
+  buy_price: number | null;
+  sell_price: number | null;
+  transaction_date: string | null;
+}
+
+export interface FinancialSummary {
+  totalSpent: number;
+  totalEarned: number;
+  totalLost: number;
+  netProfit: number;
+  potentialRevenue: number;
+  watchlistCount: number;
+  purchasedCount: number;
+  soldCount: number;
+  lossesCount: number;
+>>>>>>> b462a0c3e1989d82e4e235195ce17108cf6ef656
 }

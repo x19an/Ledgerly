@@ -19,15 +19,15 @@ const AccountTable: React.FC<AccountTableProps> = ({ status, accounts, onUpdate,
   const [potentialIncome, setPotentialIncome] = useState<string>('');
   const [lossReason, setLossReason] = useState<string>('');
 
-  const handleDelete = (e: React.MouseEvent, id: number) => {
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     if (window.confirm('Permanently delete this account record?')) {
-      dbService.deleteAccount(id);
+      await dbService.deleteAccount(id);
       onUpdate();
     }
   };
 
-  const handleStatusTransition = (e: React.MouseEvent, id: number) => {
+  const handleStatusTransition = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     
     if (status === AccountStatus.WATCHLIST) {
@@ -37,14 +37,14 @@ const AccountTable: React.FC<AccountTableProps> = ({ status, accounts, onUpdate,
         alert('Please enter valid buy price and potential income');
         return;
       }
-      dbService.purchaseAccount(id, buy, potential);
+      await dbService.purchaseAccount(id, buy, potential);
     } else if (status === AccountStatus.PURCHASED) {
       const sell = parseFloat(buyPrice);
       if (isNaN(sell)) {
         alert('Please enter a valid selling price');
         return;
       }
-      dbService.sellAccount(id, sell);
+      await dbService.sellAccount(id, sell);
     }
 
     setTransitioningId(null);
@@ -53,13 +53,13 @@ const AccountTable: React.FC<AccountTableProps> = ({ status, accounts, onUpdate,
     onUpdate();
   };
 
-  const handleLossTransition = (e: React.MouseEvent, id: number) => {
+  const handleLossTransition = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     if (!lossReason.trim()) {
       alert('Please provide a reason for the loss');
       return;
     }
-    dbService.markAsLost(id, lossReason);
+    await dbService.markAsLost(id, lossReason);
     setLossTransitioningId(null);
     setLossReason('');
     onUpdate();

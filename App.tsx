@@ -5,6 +5,7 @@ import { AccountStatus, AccountWithTransaction, FinancialSummary } from './types
 import Dashboard from './components/Dashboard';
 import AccountTable from './components/AccountTable';
 import AddAccountModal from './components/AddAccountModal';
+import RecordLossModal from './components/RecordLossModal';
 import AccountDetailModal from './components/AccountDetailModal';
 import { LayoutGrid, ClipboardList, Wallet, CheckCircle, Plus, Moon, Sun, AlertTriangle } from 'lucide-react';
 
@@ -14,6 +15,7 @@ const App: React.FC = () => {
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [accounts, setAccounts] = useState<AccountWithTransaction[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isRecordLossModalOpen, setIsRecordLossModalOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<AccountWithTransaction | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
@@ -29,11 +31,11 @@ const App: React.FC = () => {
   }, [isDarkMode]);
 
   const refreshData = useCallback(async () => {
-    const sum = dbService.getSummary();
+    const sum = await dbService.getSummary();
     setSummary(sum);
     
     if (activeTab !== 'dashboard') {
-      const data = dbService.getAccountsByStatus(activeTab as AccountStatus);
+      const data = await dbService.getAccountsByStatus(activeTab as AccountStatus);
       setAccounts(data);
       
       if (selectedAccount) {
@@ -50,12 +52,20 @@ const App: React.FC = () => {
     });
   }, [refreshData]);
 
+  const handleAddAction = () => {
+    if (activeTab === AccountStatus.LOSSES) {
+      setIsRecordLossModalOpen(true);
+    } else {
+      setIsAddModalOpen(true);
+    }
+  };
+
   if (!isReady) {
     return (
       <div className={`flex h-screen items-center justify-center ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-          <p className="text-lg font-medium">Initializing Ledgerly SQLite Core...</p>
+          <p className="text-lg font-medium">Connecting to Ledgerly Server...</p>
         </div>
       </div>
     );
@@ -130,11 +140,15 @@ const App: React.FC = () => {
           </button>
           
           <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+            onClick={handleAddAction}
+            className={`w-full flex items-center justify-center gap-2 font-semibold py-2.5 px-4 rounded-xl transition-all shadow-lg ${
+              activeTab === AccountStatus.LOSSES
+                ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+            }`}
           >
-            <Plus size={20} />
-            Add Account
+            {activeTab === AccountStatus.LOSSES ? <AlertTriangle size={20} /> : <Plus size={20} />}
+            {activeTab === AccountStatus.LOSSES ? 'Record Loss' : 'Add Account'}
           </button>
         </div>
       </aside>
@@ -148,7 +162,7 @@ const App: React.FC = () => {
             {activeTab === 'dashboard' ? 'Overview' : activeTab === AccountStatus.LOSSES ? 'Losses' : activeTab}
           </h2>
           <div className="text-sm opacity-50">
-            Engine: <span className="text-emerald-500 font-medium font-mono">SQLite V3</span>
+            Engine: <span className="text-emerald-500 font-medium font-mono">SQLite V3 (Server)</span>
           </div>
         </header>
 
@@ -170,6 +184,13 @@ const App: React.FC = () => {
       <AddAccountModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
+        onAdded={refreshData}
+        isDarkMode={isDarkMode}
+      />
+
+      <RecordLossModal
+        isOpen={isRecordLossModalOpen}
+        onClose={() => setIsRecordLossModalOpen(false)}
         onAdded={refreshData}
         isDarkMode={isDarkMode}
       />

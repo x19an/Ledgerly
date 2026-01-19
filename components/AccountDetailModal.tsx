@@ -23,10 +23,10 @@ const AccountDetailModal: React.FC<AccountDetailModalProps> = ({ account, onClos
 
   if (!account) return null;
 
-  const handleSave = (field: keyof AccountWithTransaction, value: any) => {
+  const handleSave = async (field: keyof AccountWithTransaction, value: any) => {
     const updatedData = { ...formData, [field]: value };
     setFormData(updatedData);
-    dbService.updateAccount({ id: account.id, [field]: value });
+    await dbService.updateAccount({ id: account.id, [field]: value });
     onUpdate();
   };
 

@@ -17,7 +17,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isOpen, onClose, onAd
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!identifier || !expectedPrice) {
@@ -31,7 +31,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isOpen, onClose, onAd
       return;
     }
 
-    dbService.addWatchlistAccount(identifier, link, price);
+    await dbService.addWatchlistAccount(identifier, link, price);
     onAdded();
     onClose();
     

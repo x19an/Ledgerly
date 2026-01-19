@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "ledgerly",
   "version": "1.0.0",
   "description": "Account reselling tracker",
@@ -13,6 +12,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "framer-motion": "^11.0.8",
     "lucide-react": "^0.473.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -32,27 +32,3 @@
     "vite": "^5.1.4"
   }
 }
-=======
-  "name": "ledgerly---account-reselling-manager",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react-dom": "^19.2.3",
-    "lucide-react": "^0.562.0",
-    "react": "^19.2.3",
-    "recharts": "^3.6.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
-  }
-}
->>>>>>> b462a0c3e1989d82e4e235195ce17108cf6ef656

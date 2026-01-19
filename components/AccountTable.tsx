@@ -1,8 +1,8 @@
-<<<<<<< HEAD
 import React from 'react';
 import { Account, AccountStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
-import { ExternalLink, ShoppingCart, DollarSign, XCircle, Trash2, MoreHorizontal } from 'lucide-react';
+import { ExternalLink, ShoppingCart, DollarSign, XCircle, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface AccountTableProps {
   accounts: Account[];
@@ -26,61 +26,71 @@ export const AccountTable: React.FC<AccountTableProps> = ({
 
   if (accounts.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-        <div className="mx-auto w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-          <ShoppingCart className="w-6 h-6 text-slate-400" />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-12 text-center"
+      >
+        <div className="mx-auto w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+          <ShoppingCart className="w-8 h-8 text-slate-400 dark:text-slate-500" />
         </div>
-        <h3 className="text-lg font-medium text-slate-900">No accounts found</h3>
-        <p className="text-slate-500 mt-1">There are no accounts in this category yet.</p>
-      </div>
+        <h3 className="text-lg font-medium text-slate-900 dark:text-white">No accounts found</h3>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">There are no accounts in this category yet.</p>
+      </motion.div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors duration-300">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800">
             <tr>
-              <th className="px-6 py-4 font-semibold text-slate-700">Identifier</th>
-              {status === AccountStatus.WATCHLIST && <th className="px-6 py-4 font-semibold text-slate-700">Expected Price</th>}
-              {status === AccountStatus.PURCHASED && <th className="px-6 py-4 font-semibold text-slate-700">Buy Price</th>}
-              {status === AccountStatus.PURCHASED && <th className="px-6 py-4 font-semibold text-slate-700">Potential</th>}
-              {status === AccountStatus.SOLD && <th className="px-6 py-4 font-semibold text-slate-700">Sold For</th>}
-              {status === AccountStatus.SOLD && <th className="px-6 py-4 font-semibold text-slate-700">Profit</th>}
-              {status === AccountStatus.LOSSES && <th className="px-6 py-4 font-semibold text-slate-700">Loss Amount</th>}
-              {status === AccountStatus.LOSSES && <th className="px-6 py-4 font-semibold text-slate-700">Reason</th>}
-              <th className="px-6 py-4 font-semibold text-slate-700">Notes</th>
-              <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
+              <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Identifier</th>
+              {status === AccountStatus.WATCHLIST && <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Expected Price</th>}
+              {status === AccountStatus.PURCHASED && <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Buy Price</th>}
+              {status === AccountStatus.PURCHASED && <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Potential</th>}
+              {status === AccountStatus.SOLD && <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Sold For</th>}
+              {status === AccountStatus.SOLD && <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Profit</th>}
+              {status === AccountStatus.LOSSES && <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Loss Amount</th>}
+              {status === AccountStatus.LOSSES && <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Reason</th>}
+              <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">Notes</th>
+              <th className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {accounts.map((acc) => (
-              <tr key={acc.id} className="hover:bg-slate-50 transition-colors">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {accounts.map((acc, i) => (
+              <motion.tr 
+                key={acc.id} 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: i * 0.05 }}
+                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
                 <td className="px-6 py-4">
-                  <div className="font-medium text-slate-900">{acc.identifier}</div>
+                  <div className="font-medium text-slate-900 dark:text-slate-100">{acc.identifier}</div>
                   {acc.link && (
-                    <a href={acc.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center mt-1">
+                    <a href={acc.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center mt-1">
                       Link <ExternalLink className="w-3 h-3 ml-1" />
                     </a>
                   )}
                 </td>
 
                 {status === AccountStatus.WATCHLIST && (
-                  <td className="px-6 py-4 text-slate-600">{formatCurrency(acc.expected_price)}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{formatCurrency(acc.expected_price)}</td>
                 )}
 
                 {status === AccountStatus.PURCHASED && (
                   <>
-                    <td className="px-6 py-4 text-slate-600">{formatCurrency(acc.buy_price)}</td>
-                    <td className="px-6 py-4 text-emerald-600 font-medium">{formatCurrency(acc.potential_income)}</td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{formatCurrency(acc.buy_price)}</td>
+                    <td className="px-6 py-4 text-emerald-600 dark:text-emerald-400 font-medium">{formatCurrency(acc.potential_income)}</td>
                   </>
                 )}
 
                 {status === AccountStatus.SOLD && (
                   <>
-                    <td className="px-6 py-4 text-slate-600">{formatCurrency(acc.sell_price)}</td>
-                    <td className={`px-6 py-4 font-bold ${(acc.sell_price || 0) - (acc.buy_price || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{formatCurrency(acc.sell_price)}</td>
+                    <td className={`px-6 py-4 font-bold ${(acc.sell_price || 0) - (acc.buy_price || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                       {formatCurrency((acc.sell_price || 0) - (acc.buy_price || 0))}
                     </td>
                   </>
@@ -88,373 +98,68 @@ export const AccountTable: React.FC<AccountTableProps> = ({
 
                 {status === AccountStatus.LOSSES && (
                   <>
-                    <td className="px-6 py-4 text-red-600 font-medium">{formatCurrency(acc.buy_price)}</td>
-                    <td className="px-6 py-4 text-slate-500 italic">{acc.loss_reason || 'No reason provided'}</td>
+                    <td className="px-6 py-4 text-red-600 dark:text-red-400 font-medium">{formatCurrency(acc.buy_price)}</td>
+                    <td className="px-6 py-4 text-slate-500 dark:text-slate-500 italic">{acc.loss_reason || 'No reason provided'}</td>
                   </>
                 )}
 
-                <td className="px-6 py-4 text-slate-500 truncate max-w-xs">{acc.notes || '-'}</td>
+                <td className="px-6 py-4 text-slate-500 dark:text-slate-400 truncate max-w-xs">{acc.notes || '-'}</td>
 
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end space-x-2">
                     {status === AccountStatus.WATCHLIST && (
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => onPurchase(acc)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors title='Purchase'"
+                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                        title="Purchase"
                       >
                         <ShoppingCart className="w-4 h-4" />
-                      </button>
+                      </motion.button>
                     )}
                     {status === AccountStatus.PURCHASED && (
                       <>
-                        <button
+                        <motion.button
+                           whileHover={{ scale: 1.1 }}
+                           whileTap={{ scale: 0.9 }}
                           onClick={() => onSell(acc)}
-                          className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                           title="Mark Sold"
                         >
                           <DollarSign className="w-4 h-4" />
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
+                           whileHover={{ scale: 1.1 }}
+                           whileTap={{ scale: 0.9 }}
                           onClick={() => onLoss(acc)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                           title="Mark Loss"
                         >
                           <XCircle className="w-4 h-4" />
-                        </button>
+                        </motion.button>
                       </>
                     )}
-                     <button
+                     <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => {
                             if(window.confirm('Are you sure you want to delete this account permanently?')) {
                                 onDelete(acc.id);
                             }
                         }}
-                        className="p-2 text-slate-400 hover:bg-slate-100 hover:text-red-500 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-500 dark:hover:text-red-400 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </motion.button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
-=======
-
-import React, { useState } from 'react';
-import { AccountStatus, AccountWithTransaction } from '../types';
-import { dbService } from '../db';
-import { Trash2, TrendingUp, DollarSign, CheckCircle, X, Zap, AlertTriangle, ExternalLink } from 'lucide-react';
-
-interface AccountTableProps {
-  status: AccountStatus;
-  accounts: AccountWithTransaction[];
-  onUpdate: () => void;
-  onSelectAccount: (account: AccountWithTransaction) => void;
-  isDarkMode: boolean;
-}
-
-const AccountTable: React.FC<AccountTableProps> = ({ status, accounts, onUpdate, onSelectAccount, isDarkMode }) => {
-  const [transitioningId, setTransitioningId] = useState<number | null>(null);
-  const [lossTransitioningId, setLossTransitioningId] = useState<number | null>(null);
-  const [buyPrice, setBuyPrice] = useState<string>('');
-  const [potentialIncome, setPotentialIncome] = useState<string>('');
-  const [lossReason, setLossReason] = useState<string>('');
-
-  const handleDelete = async (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
-    if (window.confirm('Permanently delete this account record?')) {
-      await dbService.deleteAccount(id);
-      onUpdate();
-    }
-  };
-
-  const handleStatusTransition = async (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
-    
-    if (status === AccountStatus.WATCHLIST) {
-      const buy = parseFloat(buyPrice);
-      const potential = parseFloat(potentialIncome);
-      if (isNaN(buy) || isNaN(potential)) {
-        alert('Please enter valid buy price and potential income');
-        return;
-      }
-      await dbService.purchaseAccount(id, buy, potential);
-    } else if (status === AccountStatus.PURCHASED) {
-      const sell = parseFloat(buyPrice);
-      if (isNaN(sell)) {
-        alert('Please enter a valid selling price');
-        return;
-      }
-      await dbService.sellAccount(id, sell);
-    }
-
-    setTransitioningId(null);
-    setBuyPrice('');
-    setPotentialIncome('');
-    onUpdate();
-  };
-
-  const handleLossTransition = async (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
-    if (!lossReason.trim()) {
-      alert('Please provide a reason for the loss');
-      return;
-    }
-    await dbService.markAsLost(id, lossReason);
-    setLossTransitioningId(null);
-    setLossReason('');
-    onUpdate();
-  };
-
-  const formatCurrency = (val: number | null) => {
-    if (val === null) return '-';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(val);
-  };
-
-  const getProfit = (buy: number | null, sell: number | null) => {
-    if (buy === null || sell === null) return null;
-    return sell - buy;
-  };
-
-  const containerClass = isDarkMode 
-    ? "bg-[#111] border-white/5" 
-    : "bg-white border-slate-200";
-
-  const headClass = isDarkMode ? "bg-[#1a1a1a] border-white/5" : "bg-slate-50 border-slate-200";
-  const rowClass = isDarkMode 
-    ? "border-white/5 hover:bg-white/[0.02]" 
-    : "border-slate-100 hover:bg-slate-50/50";
-  const textPrimary = isDarkMode ? "text-white" : "text-slate-900";
-  const textSecondary = isDarkMode ? "text-slate-500" : "text-slate-400";
-
-  return (
-    <div className="animate-in fade-in duration-300">
-      <div className={`rounded-2xl border shadow-sm overflow-hidden ${containerClass}`}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className={`border-b ${headClass}`}>
-              <tr>
-                <th className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>Identifier</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Source</th>
-                {status === AccountStatus.WATCHLIST && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Expected</th>}
-                {status !== AccountStatus.WATCHLIST && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Purchase</th>}
-                {status === AccountStatus.PURCHASED && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Target Income</th>}
-                {status === AccountStatus.SOLD && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Revenue</th>}
-                {status === AccountStatus.SOLD && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Net Profit</th>}
-                {status === AccountStatus.LOSSES && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Reason</th>}
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className={`divide-y ${isDarkMode ? 'divide-white/5' : 'divide-slate-100'}`}>
-              {accounts.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className={`px-6 py-12 text-center italic ${textSecondary}`}>
-                    Category is currently empty
-                  </td>
-                </tr>
-              ) : (
-                accounts.map((acc) => (
-                  <tr 
-                    key={acc.id} 
-                    onClick={() => onSelectAccount(acc)}
-                    className={`transition-all group cursor-pointer ${rowClass} ${status !== AccountStatus.WATCHLIST ? 'hover:shadow-inner' : ''}`}
-                  >
-                    <td className="px-6 py-4">
-                      <div className={`font-semibold transition-colors ${textPrimary} group-hover:text-emerald-500`}>{acc.identifier}</div>
-                      <div className={`text-xs ${textSecondary}`}>Ref: #{acc.id}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {acc.link ? (
-                        <a 
-                          href={acc.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className={`flex items-center gap-1.5 text-xs font-bold uppercase transition-colors px-2 py-1 rounded-lg ${
-                            isDarkMode ? 'bg-white/5 text-blue-400 hover:bg-blue-500/10' : 'bg-slate-100 text-blue-600 hover:bg-blue-50'
-                          }`}
-                        >
-                          <ExternalLink size={12} /> Link
-                        </a>
-                      ) : (
-                        <span className={`text-xs font-black px-2 py-1 rounded-lg opacity-20 ${isDarkMode ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
-                          No Source
-                        </span>
-                      )}
-                    </td>
-                    
-                    {status === AccountStatus.WATCHLIST && (
-                      <td className={`px-6 py-4 font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                        {formatCurrency(acc.expected_price)}
-                      </td>
-                    )}
-
-                    {status !== AccountStatus.WATCHLIST && (
-                      <td className={`px-6 py-4 font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                        {formatCurrency(acc.buy_price)}
-                      </td>
-                    )}
-
-                    {status === AccountStatus.PURCHASED && (
-                      <td className={`px-6 py-4 font-medium text-amber-500`}>
-                        {formatCurrency(acc.potential_income)}
-                      </td>
-                    )}
-
-                    {status === AccountStatus.SOLD && (
-                      <td className={`px-6 py-4 font-black ${isDarkMode ? 'text-white' : 'text-slate-600'}`}>
-                        {formatCurrency(acc.sell_price)}
-                      </td>
-                    )}
-
-                    {status === AccountStatus.SOLD && (
-                      <td className="px-6 py-4 font-bold">
-                        {(() => {
-                          const profit = getProfit(acc.buy_price, acc.sell_price);
-                          if (profit === null) return '-';
-                          return (
-                            <span className={profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}>
-                              {profit >= 0 ? '+' : ''}{formatCurrency(profit)}
-                            </span>
-                          );
-                        })()}
-                      </td>
-                    )}
-
-                    {status === AccountStatus.LOSSES && (
-                      <td className={`px-6 py-4 text-xs font-medium text-rose-500`}>
-                        {acc.loss_reason || 'N/A'}
-                      </td>
-                    )}
-
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        {transitioningId === acc.id ? (
-                          <div className={`flex flex-col md:flex-row items-center gap-2 animate-in slide-in-from-right-2 p-2 rounded-xl backdrop-blur-md border shadow-2xl z-50 ${
-                            isDarkMode ? 'bg-[#222]/90 border-white/10' : 'bg-white/95 border-slate-200 shadow-xl shadow-slate-200/50'
-                          }`}>
-                            <input 
-                              type="number"
-                              autoFocus
-                              placeholder={status === AccountStatus.WATCHLIST ? "Cost" : "Sold For"}
-                              className={`px-3 py-2 border rounded-lg text-sm w-24 outline-none focus:ring-2 focus:ring-emerald-500 ${
-                                isDarkMode ? 'bg-[#111] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
-                              }`}
-                              value={buyPrice}
-                              onChange={(e) => setBuyPrice(e.target.value)}
-                            />
-                            {status === AccountStatus.WATCHLIST && (
-                              <input 
-                                type="number"
-                                placeholder="Potential"
-                                className={`px-3 py-2 border rounded-lg text-sm w-24 outline-none focus:ring-2 focus:ring-amber-500 ${
-                                  isDarkMode ? 'bg-[#111] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
-                                }`}
-                                value={potentialIncome}
-                                onChange={(e) => setPotentialIncome(e.target.value)}
-                              />
-                            )}
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => handleStatusTransition(e, acc.id)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg transition-transform active:scale-95"
-                              >
-                                <CheckCircle size={16} />
-                              </button>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setTransitioningId(null); setBuyPrice(''); setPotentialIncome(''); }}
-                                className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-white/5 text-slate-400 hover:bg-white/10' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ) : lossTransitioningId === acc.id ? (
-                          <div className={`flex flex-col md:flex-row items-center gap-2 animate-in slide-in-from-right-2 p-2 rounded-xl backdrop-blur-md border shadow-2xl z-50 ${
-                            isDarkMode ? 'bg-[#331111]/90 border-rose-500/20' : 'bg-white/95 border-rose-100 shadow-xl shadow-rose-200/50'
-                          }`}>
-                            <input 
-                              type="text"
-                              autoFocus
-                              placeholder="Reason (e.g. Banned)"
-                              className={`px-3 py-2 border rounded-lg text-sm w-48 outline-none focus:ring-2 focus:ring-rose-500 ${
-                                isDarkMode ? 'bg-[#111] border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
-                              }`}
-                              value={lossReason}
-                              onChange={(e) => setLossReason(e.target.value)}
-                            />
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => handleLossTransition(e, acc.id)}
-                                className="bg-rose-600 hover:bg-rose-700 text-white p-2 rounded-lg transition-transform active:scale-95"
-                              >
-                                <AlertTriangle size={16} />
-                              </button>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setLossTransitioningId(null); setLossReason(''); }}
-                                className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-white/5 text-slate-400 hover:bg-white/10' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            {status === AccountStatus.PURCHASED && (
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); setLossTransitioningId(acc.id); }}
-                                  className={`p-2 rounded-lg transition-colors ${
-                                    isDarkMode ? 'text-rose-500 hover:bg-rose-500/10' : 'text-rose-600 hover:bg-rose-50'
-                                  }`}
-                                  title="Mark as Lost"
-                                >
-                                  <AlertTriangle size={16} />
-                                </button>
-                            )}
-                            {(status === AccountStatus.WATCHLIST || status === AccountStatus.PURCHASED) && (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setTransitioningId(acc.id); }}
-                                className={`flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 rounded-lg transition-all ${
-                                  isDarkMode 
-                                    ? 'text-emerald-400 hover:bg-white/5 border border-transparent hover:border-emerald-400/20' 
-                                    : 'text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-600/20'
-                                }`}
-                              >
-                                {status === AccountStatus.WATCHLIST ? <DollarSign size={14} /> : <TrendingUp size={14} />}
-                                {status === AccountStatus.WATCHLIST ? 'Purchase' : 'Sold'}
-                              </button>
-                            )}
-                            <button 
-                              onClick={(e) => handleDelete(e, acc.id)}
-                              className={`p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
-                                isDarkMode ? 'text-white/10 hover:text-rose-500 hover:bg-rose-500/10' : 'text-slate-300 hover:text-rose-500 hover:bg-rose-50'
-                              }`}
-                              title="Delete Account"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
->>>>>>> b462a0c3e1989d82e4e235195ce17108cf6ef656
       </div>
     </div>
   );
 };
-<<<<<<< HEAD
-=======
-
-export default AccountTable;
->>>>>>> b462a0c3e1989d82e4e235195ce17108cf6ef656

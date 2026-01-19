@@ -1,14 +1,5 @@
-<<<<<<< HEAD
 {
   "name": "Ledgerly",
   "description": "A web-first account reselling tracker with SQLite persistence, managing lifecycle from Watchlist to Sold/Losses.",
   "requestFramePermissions": []
 }
-=======
-
-{
-  "name": "Ledgerly - Account Reselling Manager",
-  "description": "A high-performance account reselling tracker with local SQLite persistence. Tracks digital assets with real-time profit analytics and potential income forecasting.",
-  "requestFramePermissions": []
-}
->>>>>>> b462a0c3e1989d82e4e235195ce17108cf6ef656

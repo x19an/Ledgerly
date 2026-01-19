@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Account, CreateAccountPayload, PurchasePayload, SellPayload, LossPayload } from '../types';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface BaseModalProps {
   title: string;
@@ -10,21 +11,56 @@ interface BaseModalProps {
 }
 
 const BaseModal: React.FC<BaseModalProps> = ({ title, isOpen, onClose, children }) => {
-  if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-slate-100">
-          <h3 className="font-semibold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg text-slate-500">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-4">{children}</div>
-      </div>
-    </div>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-50 bg-black/40 dark:bg-black/70 backdrop-blur-sm"
+          />
+          
+          {/* Modal Content */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden pointer-events-auto border border-slate-100 dark:border-slate-800"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="font-semibold text-slate-900 dark:text-white">{title}</h3>
+                <button 
+                  onClick={onClose} 
+                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-4">{children}</div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
+
+// --- Input Component Helper ---
+const InputField = ({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) => (
+  <div>
+    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
+    <input
+      {...props}
+      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+    />
+  </div>
+);
 
 // --- Create Account Modal ---
 export const CreateAccountModal: React.FC<{
@@ -44,45 +80,36 @@ export const CreateAccountModal: React.FC<{
   return (
     <BaseModal title="Add to Watchlist" isOpen={isOpen} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <InputField 
+          label="Identifier"
+          required
+          placeholder="e.g. Fortnite Account #123"
+          value={formData.identifier}
+          onChange={e => setFormData({ ...formData, identifier: e.target.value })}
+        />
+        <InputField 
+          label="Link"
+          placeholder="https://..."
+          value={formData.link}
+          onChange={e => setFormData({ ...formData, link: e.target.value })}
+        />
+        <InputField 
+          label="Expected Price ($)"
+          type="number"
+          step="0.01"
+          value={formData.expected_price}
+          onChange={e => setFormData({ ...formData, expected_price: parseFloat(e.target.value) })}
+        />
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Identifier</label>
-          <input
-            required
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            placeholder="e.g. Fortnite Account #123"
-            value={formData.identifier}
-            onChange={e => setFormData({ ...formData, identifier: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Link</label>
-          <input
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            placeholder="https://..."
-            value={formData.link}
-            onChange={e => setFormData({ ...formData, link: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Expected Price ($)</label>
-          <input
-            type="number"
-            step="0.01"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            value={formData.expected_price}
-            onChange={e => setFormData({ ...formData, expected_price: parseFloat(e.target.value) })}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
           <textarea
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
             rows={3}
             value={formData.notes}
             onChange={e => setFormData({ ...formData, notes: e.target.value })}
           />
         </div>
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-medium">Add Account</button>
+        <button type="submit" className="w-full bg-blue-600 dark:bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-medium transition-colors">Add Account</button>
       </form>
     </BaseModal>
   );
@@ -98,8 +125,7 @@ export const PurchaseModal: React.FC<{
   const [buyPrice, setBuyPrice] = useState<number>(0);
   const [potential, setPotential] = useState<number>(0);
 
-  // Initialize with expected price if available
-  React.useEffect(() => {
+  useEffect(() => {
       if(isOpen && account?.expected_price) {
           setBuyPrice(account.expected_price);
       }
@@ -114,28 +140,22 @@ export const PurchaseModal: React.FC<{
   return (
     <BaseModal title="Record Purchase" isOpen={isOpen} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Buy Price ($)</label>
-          <input
-            type="number"
-            step="0.01"
-            required
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-            value={buyPrice}
-            onChange={e => setBuyPrice(parseFloat(e.target.value))}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Potential Sale Price ($)</label>
-          <input
-            type="number"
-            step="0.01"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-            value={potential}
-            onChange={e => setPotential(parseFloat(e.target.value))}
-          />
-        </div>
-        <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 font-medium">Confirm Purchase</button>
+        <InputField 
+          label="Buy Price ($)"
+          type="number"
+          step="0.01"
+          required
+          value={buyPrice}
+          onChange={e => setBuyPrice(parseFloat(e.target.value))}
+        />
+        <InputField 
+          label="Potential Sale Price ($)"
+          type="number"
+          step="0.01"
+          value={potential}
+          onChange={e => setPotential(parseFloat(e.target.value))}
+        />
+        <button type="submit" className="w-full bg-emerald-600 dark:bg-emerald-500 text-white py-2 rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 font-medium transition-colors">Confirm Purchase</button>
       </form>
     </BaseModal>
   );
@@ -158,18 +178,15 @@ export const SellModal: React.FC<{
   return (
     <BaseModal title="Record Sale" isOpen={isOpen} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Sold Price ($)</label>
-          <input
-            type="number"
-            step="0.01"
-            required
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-            value={sellPrice}
-            onChange={e => setSellPrice(parseFloat(e.target.value))}
-          />
-        </div>
-        <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 font-medium">Confirm Sale</button>
+        <InputField 
+          label="Sold Price ($)"
+          type="number"
+          step="0.01"
+          required
+          value={sellPrice}
+          onChange={e => setSellPrice(parseFloat(e.target.value))}
+        />
+        <button type="submit" className="w-full bg-emerald-600 dark:bg-emerald-500 text-white py-2 rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 font-medium transition-colors">Confirm Sale</button>
       </form>
     </BaseModal>
   );
@@ -193,9 +210,9 @@ export const LossModal: React.FC<{
     <BaseModal title="Record Loss" isOpen={isOpen} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Reason for Loss</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Reason for Loss</label>
           <select
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors"
             value={reason}
             onChange={e => setReason(e.target.value)}
             required
@@ -208,7 +225,7 @@ export const LossModal: React.FC<{
             <option value="Other">Other</option>
           </select>
         </div>
-        <button type="submit" className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 font-medium">Confirm Loss</button>
+        <button type="submit" className="w-full bg-red-600 dark:bg-red-500 text-white py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-600 font-medium transition-colors">Confirm Loss</button>
       </form>
     </BaseModal>
   );

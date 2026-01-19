@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { AccountStatus, AccountWithTransaction } from '../types';
 import { dbService } from '../db';
-import { X, Eye, EyeOff, KeyRound, Mail, UserCircle, Layers, CreditCard, Zap, AlertTriangle } from 'lucide-react';
+import { X, Eye, EyeOff, KeyRound, Mail, UserCircle, Layers, Link as LinkIcon, Zap, AlertTriangle } from 'lucide-react';
 
 interface AccountDetailModalProps {
   account: AccountWithTransaction | null;
@@ -78,10 +78,10 @@ const AccountDetailModal: React.FC<AccountDetailModalProps> = ({ account, onClos
                labelClass={labelThemeClass}
              />
              <CredentialField 
-               label="Level" 
-               value={formData.level || ''} 
-               onChange={(v) => handleSave('level', v)}
-               icon={<CreditCard size={14} />}
+               label="Link" 
+               value={formData.link || ''} 
+               onChange={(v) => handleSave('link', v)}
+               icon={<LinkIcon size={14} />}
                inputClass={inputThemeClass}
                labelClass={labelThemeClass}
              />

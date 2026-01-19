@@ -10,7 +10,7 @@ declare global {
 
 let dbInstance: any = null;
 
-const DB_STORAGE_KEY = 'ledgerly_db_data_v4';
+const DB_STORAGE_KEY = 'ledgerly_db_data_v5';
 
 export const initDB = async () => {
   if (dbInstance) return dbInstance;
@@ -33,7 +33,7 @@ export const initDB = async () => {
       'email', 'password', 
       'account_email', 'account_password', 
       'account_2nd_email', 'account_2nd_password', 
-      'notes', 'potential_income', 'loss_reason'
+      'notes', 'potential_income', 'loss_reason', 'link'
     ];
     
     newCols.forEach(col => {
@@ -48,7 +48,7 @@ export const initDB = async () => {
       CREATE TABLE IF NOT EXISTS accounts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         identifier TEXT NOT NULL,
-        level TEXT,
+        link TEXT,
         status TEXT CHECK(status IN ('watchlist', 'purchased', 'sold', 'losses')) DEFAULT 'watchlist',
         expected_price REAL,
         potential_income REAL,
@@ -112,10 +112,10 @@ export const dbService = {
     `, [status]) as AccountWithTransaction[];
   },
 
-  addWatchlistAccount: (identifier: string, level: string, expectedPrice: number) => {
+  addWatchlistAccount: (identifier: string, link: string, expectedPrice: number) => {
     execute(
-      `INSERT INTO accounts (identifier, level, expected_price, status) VALUES (?, ?, ?, ?)`,
-      [identifier, level, expectedPrice, AccountStatus.WATCHLIST]
+      `INSERT INTO accounts (identifier, link, expected_price, status) VALUES (?, ?, ?, ?)`,
+      [identifier, link, expectedPrice, AccountStatus.WATCHLIST]
     );
   },
 

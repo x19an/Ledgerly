@@ -9,7 +9,7 @@ export enum AccountStatus {
 export interface Account {
   id: number;
   identifier: string;
-  level: string;
+  link: string;
   status: AccountStatus;
   expected_price: number | null;
   potential_income: number | null;

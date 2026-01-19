@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { AccountStatus, AccountWithTransaction } from '../types';
 import { dbService } from '../db';
-import { Trash2, TrendingUp, DollarSign, CheckCircle, X, Zap, AlertTriangle } from 'lucide-react';
+import { Trash2, TrendingUp, DollarSign, CheckCircle, X, Zap, AlertTriangle, ExternalLink } from 'lucide-react';
 
 interface AccountTableProps {
   status: AccountStatus;
@@ -97,7 +97,7 @@ const AccountTable: React.FC<AccountTableProps> = ({ status, accounts, onUpdate,
             <thead className={`border-b ${headClass}`}>
               <tr>
                 <th className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>Identifier</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Level</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Source</th>
                 {status === AccountStatus.WATCHLIST && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Expected</th>}
                 {status !== AccountStatus.WATCHLIST && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Purchase</th>}
                 {status === AccountStatus.PURCHASED && <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider opacity-60">Target Income</th>}
@@ -126,9 +126,23 @@ const AccountTable: React.FC<AccountTableProps> = ({ status, accounts, onUpdate,
                       <div className={`text-xs ${textSecondary}`}>Ref: #{acc.id}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs font-black px-2 py-1 rounded-lg ${isDarkMode ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
-                        L{acc.level}
-                      </span>
+                      {acc.link ? (
+                        <a 
+                          href={acc.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          onClick={(e) => e.stopPropagation()}
+                          className={`flex items-center gap-1.5 text-xs font-bold uppercase transition-colors px-2 py-1 rounded-lg ${
+                            isDarkMode ? 'bg-white/5 text-blue-400 hover:bg-blue-500/10' : 'bg-slate-100 text-blue-600 hover:bg-blue-50'
+                          }`}
+                        >
+                          <ExternalLink size={12} /> Link
+                        </a>
+                      ) : (
+                        <span className={`text-xs font-black px-2 py-1 rounded-lg opacity-20 ${isDarkMode ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
+                          No Source
+                        </span>
+                      )}
                     </td>
                     
                     {status === AccountStatus.WATCHLIST && (

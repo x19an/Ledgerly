@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { dbService } from '../db';
-import { X, Tag, List, Target } from 'lucide-react';
+import { X, Tag, Link as LinkIcon, Target } from 'lucide-react';
 
 interface AddAccountModalProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ interface AddAccountModalProps {
 
 const AddAccountModal: React.FC<AddAccountModalProps> = ({ isOpen, onClose, onAdded, isDarkMode }) => {
   const [identifier, setIdentifier] = useState('');
-  const [level, setLevel] = useState('');
+  const [link, setLink] = useState('');
   const [expectedPrice, setExpectedPrice] = useState('');
 
   if (!isOpen) return null;
@@ -20,8 +20,8 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isOpen, onClose, onAd
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!identifier || !level || !expectedPrice) {
-      alert('All fields are required');
+    if (!identifier || !expectedPrice) {
+      alert('Identifier and Price are required');
       return;
     }
 
@@ -31,12 +31,12 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isOpen, onClose, onAd
       return;
     }
 
-    dbService.addWatchlistAccount(identifier, level, price);
+    dbService.addWatchlistAccount(identifier, link, price);
     onAdded();
     onClose();
     
     setIdentifier('');
-    setLevel('');
+    setLink('');
     setExpectedPrice('');
   };
 
@@ -70,15 +70,14 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isOpen, onClose, onAd
 
           <div className="space-y-1">
             <label className="text-xs font-bold opacity-50 uppercase tracking-widest flex items-center gap-2">
-              <List size={12} /> Tier / Level
+              <LinkIcon size={12} /> Item Link
             </label>
             <input 
-              type="text" 
-              placeholder="e.g. Diamond / LVL 30"
+              type="url" 
+              placeholder="https://..."
               className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${inputClass}`}
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              required
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
             />
           </div>
 

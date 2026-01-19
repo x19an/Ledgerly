@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SummaryStats } from '../types';
+import { SummaryStats } from '../types.ts';
 import { DollarSign, TrendingUp, TrendingDown, AlertCircle, Wallet, RotateCcw, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 

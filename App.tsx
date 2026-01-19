@@ -1,11 +1,11 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { api } from './services/api';
-import { Account, AccountStatus, SummaryStats, CreateAccountPayload, PurchasePayload, SellPayload, LossPayload } from './types';
-import { Dashboard } from './components/Dashboard';
-import { AccountTable } from './components/AccountTable';
-import { CreateAccountModal, PurchaseModal, SellModal, LossModal, AccountDetailsModal } from './components/Modals';
-import { Plus, LayoutDashboard, Moon, Sun, RefreshCw, Layers } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { api } from './services/api.ts';
+import { Account, AccountStatus, SummaryStats, CreateAccountPayload, PurchasePayload, SellPayload, LossPayload } from './types.ts';
+import { Dashboard } from './components/Dashboard.tsx';
+import { AccountTable } from './components/AccountTable.tsx';
+import { CreateAccountModal, PurchaseModal, SellModal, LossModal, AccountDetailsModal } from './components/Modals.tsx';
+import { Plus, Moon, Sun, RefreshCw, Layers, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function App() {
@@ -15,6 +15,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -45,16 +46,16 @@ export default function App() {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      // Use query string for search
-      const queryParams = new URLSearchParams();
-      queryParams.append('status', activeTab);
-      if (searchTerm) queryParams.append('search', searchTerm);
+      const [accs, stats] = await Promise.all([
+        api.getAccounts(activeTab),
+        api.getSummary()
+      ]);
       
-      const res = await fetch(`http://localhost:3001/api/accounts?${queryParams.toString()}`);
-      const accs = await res.json();
-      
-      const stats = await api.getSummary();
-      setAccounts(accs);
+      const filtered = searchTerm 
+        ? accs.filter(a => a.identifier.toLowerCase().includes(searchTerm.toLowerCase()) || (a.category && a.category.toLowerCase().includes(searchTerm.toLowerCase())))
+        : accs;
+
+      setAccounts(filtered);
       setSummary(stats);
     } catch (error) {
       console.error("Failed to fetch data", error);
@@ -65,10 +66,7 @@ export default function App() {
   }, [activeTab, searchTerm]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-        fetchData();
-    }, searchTerm ? 300 : 0); // Debounce search
-    return () => clearTimeout(timer);
+    fetchData();
   }, [fetchData]);
 
   const handleCreate = async (data: CreateAccountPayload) => { await api.createAccount(data); fetchData(true); };
@@ -78,12 +76,33 @@ export default function App() {
   const handleDelete = async (id: number) => { await api.deleteAccount(id); fetchData(true); };
   const handleUpdateDetails = async (id: number, data: Partial<Account>) => { await api.updateAccount(id, data); fetchData(true); };
   
-  const handleRecalculate = async () => {
-      setRefreshing(true);
-      try { await api.recalculate(); await fetchData(true); } catch (err) { console.error(err); } finally { setRefreshing(false); }
+  const handleView = (account: Account) => { setSelectedAccount(account); setIsDetailsOpen(true); };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
   };
 
-  const handleView = (account: Account) => { setSelectedAccount(account); setIsDetailsOpen(true); };
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setRefreshing(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = (event.target?.result as string).split(',')[1];
+      try {
+        await api.importDatabase(base64);
+        alert('Database restored successfully!');
+        fetchData(true);
+      } catch (err: any) {
+        alert('Failed to import database: ' + err.message);
+      } finally {
+        setRefreshing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
 
   const tabs = [
     { id: AccountStatus.WATCHLIST, label: 'Watchlist' },
@@ -103,7 +122,15 @@ export default function App() {
             <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tighter">Ledgerly<span className="text-blue-600">.</span></h1>
           </div>
           <div className="flex items-center space-x-2">
-             <button onClick={() => fetchData(true)} className="p-2 text-slate-500 hover:text-blue-600 transition-colors">
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".db" className="hidden" />
+            <button 
+              onClick={handleImportClick} 
+              title="Restore database from .db file"
+              className="p-2 text-slate-500 hover:text-blue-600 transition-colors"
+            >
+              <Database className="w-4 h-4" />
+            </button>
+            <button onClick={() => fetchData(true)} className="p-2 text-slate-500 hover:text-blue-600 transition-colors">
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-blue-600' : ''}`} />
             </button>
             <button onClick={() => setIsDark(!isDark)} className="p-2 text-slate-500 hover:text-yellow-500 transition-colors">
@@ -118,7 +145,7 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Dashboard stats={summary} loading={loading && !summary} onRecalculate={handleRecalculate} />
+        <Dashboard stats={summary} loading={loading && !summary} />
 
         <div className="border-b border-slate-200 dark:border-slate-800 mb-6 flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (

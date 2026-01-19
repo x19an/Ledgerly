@@ -4,14 +4,20 @@ import { open, Database } from 'sqlite';
 import path from 'path';
 import fs from 'fs';
 
-declare var __dirname: string;
-
 let dbInstance: Database | null = null;
+
+export const closeDB = async () => {
+  if (dbInstance) {
+    await dbInstance.close();
+    dbInstance = null;
+  }
+};
 
 export const getDB = async (): Promise<Database> => {
   if (dbInstance) return dbInstance;
 
-  const dbDir = path.join(__dirname, 'db');
+  // Use process.cwd() to ensure consistent path across different environments
+  const dbDir = path.join(process.cwd(), 'db');
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
@@ -54,7 +60,6 @@ export const getDB = async (): Promise<Database> => {
       FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE
     );
 
-    -- Trigger to update updated_at
     CREATE TRIGGER IF NOT EXISTS update_account_timestamp 
     AFTER UPDATE ON accounts
     BEGIN

@@ -1,8 +1,23 @@
 
 import { Router } from 'express';
-import { getDB } from './database';
+import { getDB, closeDB } from './database';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
+
+router.get('/accounts/check-duplicate', async (req, res) => {
+  try {
+    const db = await getDB();
+    const { link } = req.query;
+    if (!link) return res.json({ exists: false });
+    
+    const existing = await db.get('SELECT id, identifier FROM accounts WHERE link = ? LIMIT 1', [link]);
+    res.json({ exists: !!existing, identifier: existing?.identifier });
+  } catch (error) {
+    res.status(500).json({ error: 'Check failed' });
+  }
+});
 
 router.get('/accounts', async (req, res) => {
   try {
@@ -58,7 +73,7 @@ router.post('/accounts', async (req, res) => {
 router.put('/accounts/:id', async (req, res) => {
     try {
         const db = await getDB();
-        const { id } = req.params;
+        const id = parseInt(req.params.id);
         const updates = req.body;
         
         delete updates.id;
@@ -81,7 +96,8 @@ router.put('/accounts/:id', async (req, res) => {
 router.delete('/accounts/:id', async (req, res) => {
     try {
         const db = await getDB();
-        await db.run('DELETE FROM accounts WHERE id = ?', req.params.id);
+        const id = parseInt(req.params.id);
+        await db.run('DELETE FROM accounts WHERE id = ?', id);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Delete failed' });
@@ -91,7 +107,7 @@ router.delete('/accounts/:id', async (req, res) => {
 router.post('/accounts/:id/purchase', async (req, res) => {
   try {
     const db = await getDB();
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
     const { buy_price, potential_income } = req.body;
 
     await db.run(`UPDATE accounts SET status = 'purchased', potential_income = ? WHERE id = ?`, [potential_income, id]);
@@ -108,7 +124,7 @@ router.post('/accounts/:id/purchase', async (req, res) => {
 router.post('/accounts/:id/sell', async (req, res) => {
   try {
     const db = await getDB();
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
     const { sell_price } = req.body;
 
     await db.run(`UPDATE accounts SET status = 'sold' WHERE id = ?`, [id]);
@@ -122,7 +138,7 @@ router.post('/accounts/:id/sell', async (req, res) => {
 router.post('/accounts/:id/loss', async (req, res) => {
   try {
     const db = await getDB();
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
     await db.run(`UPDATE accounts SET status = 'losses', loss_reason = ? WHERE id = ?`, [req.body.loss_reason, id]);
     res.json({ success: true });
   } catch (error) {
@@ -149,12 +165,29 @@ router.get('/summary', async (req, res) => {
     const counts = { watchlist: 0, purchased: 0, sold: 0, losses: 0 };
     countsResult.forEach(row => { if (counts.hasOwnProperty(row.status)) (counts as any)[row.status] = row.count; });
 
-    // Mock trend for sparkline
     const profit_trend = [30, 45, 35, 60, 50, 80, stats.net_profit || 0];
 
     res.json({ ...stats, counts, profit_trend });
   } catch (error) {
     res.status(500).json({ error: 'Summary failed' });
+  }
+});
+
+router.post('/import-db', async (req, res) => {
+  try {
+    const { base64Data } = req.body;
+    if (!base64Data) return res.status(400).json({ error: 'Missing data' });
+
+    const buffer = Buffer.from(base64Data, 'base64');
+    const dbPath = path.join(process.cwd(), 'db', 'ledgerly.db');
+
+    await closeDB();
+    fs.writeFileSync(dbPath, buffer);
+    await getDB();
+
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

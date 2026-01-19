@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Account, AccountStatus } from '../types';
-import { StatusBadge } from './StatusBadge';
+import { Account, AccountStatus } from '../types.ts';
+import { StatusBadge } from './StatusBadge.tsx';
 import { ExternalLink, ShoppingCart, DollarSign, XCircle, Trash2, Search, Filter, Tag, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -35,6 +35,7 @@ export const AccountTable: React.FC<AccountTableProps> = ({
       const date = new Date(dateStr);
       const now = new Date();
       const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+      if (isNaN(diff)) return 'N/A';
       if (diff < 60) return 'Just now';
       if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
       if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
@@ -91,7 +92,7 @@ export const AccountTable: React.FC<AccountTableProps> = ({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {accounts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center">
+                  <td colSpan={10} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center opacity-50">
                         <ShoppingCart className="w-12 h-12 mb-3 text-slate-300" />
                         <p className="text-slate-500 font-medium">No records matching your view.</p>

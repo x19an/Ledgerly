@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Lock, Mail, User, Tag } from 'lucide-react';
-import { Account, CreateAccountPayload, PurchasePayload, SellPayload, LossPayload } from '../types';
+import { X, Save, Lock, Mail, User, Tag, AlertTriangle, Loader2 } from 'lucide-react';
+import { Account, CreateAccountPayload, PurchasePayload, SellPayload, LossPayload } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../services/api.ts';
 
 interface BaseModalProps {
   title: string;
@@ -33,13 +34,23 @@ const BaseModal: React.FC<BaseModalProps> = ({ title, isOpen, onClose, children,
   );
 };
 
-const InputField = ({ label, icon, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string, icon?: React.ReactNode }) => (
+const InputField = ({ label, icon, error, loading, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string, icon?: React.ReactNode, error?: string, loading?: boolean }) => (
   <div className="w-full">
     <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{label}</label>
     <div className="relative">
       {icon && <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">{icon}</div>}
-      <input {...props} className={`w-full ${icon ? 'pl-10' : 'px-3'} py-2.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm`} />
+      <input {...props} className={`w-full ${icon ? 'pl-10' : 'px-3'} py-2.5 border ${error ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-200 dark:border-slate-800'} bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl focus:ring-2 ${error ? 'focus:ring-red-500' : 'focus:ring-blue-500'} outline-none transition-all text-sm`} />
+      {loading && (
+        <div className="absolute inset-y-0 right-3 flex items-center">
+          <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+        </div>
+      )}
     </div>
+    {error && (
+      <p className="mt-1.5 text-[10px] text-red-500 font-bold flex items-center gap-1">
+        <AlertTriangle className="w-3 h-3" /> {error}
+      </p>
+    )}
   </div>
 );
 
@@ -114,9 +125,37 @@ export const CreateAccountModal: React.FC<{
   onSubmit: (data: CreateAccountPayload) => void;
 }> = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState<CreateAccountPayload>({ identifier: '', link: '', category: '', expected_price: 0, notes: '' });
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+
+  useEffect(() => {
+    if (!formData.link) {
+      setDuplicateError(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsChecking(true);
+      try {
+        const res = await api.checkDuplicateLink(formData.link!);
+        if (res.exists) {
+          setDuplicateError(`Entry already exists: "${res.identifier}"`);
+        } else {
+          setDuplicateError(null);
+        }
+      } catch (e) {
+        console.error("Duplicate check failed", e);
+      } finally {
+        setIsChecking(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.link]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (duplicateError) return;
     onSubmit(formData);
     setFormData({ identifier: '', link: '', category: '', expected_price: 0, notes: '' });
     onClose();
@@ -125,11 +164,43 @@ export const CreateAccountModal: React.FC<{
   return (
     <BaseModal title="Add to Watchlist" isOpen={isOpen} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <InputField label="Identifier" required value={formData.identifier} onChange={e => setFormData({ ...formData, identifier: e.target.value })} />
-        <InputField label="Category / Tag" icon={<Tag className="w-4 h-4" />} value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} />
-        <InputField label="Target Link" value={formData.link} onChange={e => setFormData({ ...formData, link: e.target.value })} />
-        <InputField label="Market Value ($)" type="number" step="0.01" value={formData.expected_price} onChange={e => setFormData({ ...formData, expected_price: parseFloat(e.target.value) })} />
-        <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-bold shadow-lg shadow-blue-500/20">Add Item</button>
+        <InputField 
+          label="Identifier" 
+          required 
+          value={formData.identifier} 
+          onChange={e => setFormData({ ...formData, identifier: e.target.value })} 
+        />
+        <InputField 
+          label="Category / Tag" 
+          icon={<Tag className="w-4 h-4" />} 
+          value={formData.category} 
+          onChange={e => setFormData({ ...formData, category: e.target.value })} 
+        />
+        <InputField 
+          label="Target Link" 
+          value={formData.link} 
+          error={duplicateError || undefined}
+          loading={isChecking}
+          onChange={e => setFormData({ ...formData, link: e.target.value })} 
+        />
+        <InputField 
+          label="Market Value ($)" 
+          type="number" 
+          step="0.01" 
+          value={formData.expected_price} 
+          onChange={e => setFormData({ ...formData, expected_price: parseFloat(e.target.value) || 0 })} 
+        />
+        <button 
+          type="submit" 
+          disabled={!!duplicateError || isChecking}
+          className={`w-full py-3 rounded-xl font-bold shadow-lg transition-all ${
+            duplicateError 
+              ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed' 
+              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20'
+          }`}
+        >
+          {isChecking ? 'Checking...' : 'Add Item'}
+        </button>
       </form>
     </BaseModal>
   );
@@ -142,8 +213,8 @@ export const PurchaseModal: React.FC<{ isOpen: boolean; onClose: () => void; onS
   return (
     <BaseModal title="Log Acquisition" isOpen={isOpen} onClose={onClose}>
       <form onSubmit={(e) => { e.preventDefault(); onSubmit({ buy_price: buyPrice, potential_income: potential }); onClose(); }} className="space-y-4">
-        <InputField label="Purchase Price ($)" type="number" step="0.01" required value={buyPrice} onChange={e => setBuyPrice(parseFloat(e.target.value))} />
-        <InputField label="Expected Sale Price ($)" type="number" step="0.01" value={potential} onChange={e => setPotential(parseFloat(e.target.value))} />
+        <InputField label="Purchase Price ($)" type="number" step="0.01" required value={buyPrice} onChange={e => setBuyPrice(parseFloat(e.target.value) || 0)} />
+        <InputField label="Expected Sale Price ($)" type="number" step="0.01" value={potential} onChange={e => setPotential(parseFloat(e.target.value) || 0)} />
         <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Confirm Purchase</button>
       </form>
     </BaseModal>
@@ -155,7 +226,7 @@ export const SellModal: React.FC<{ isOpen: boolean; onClose: () => void; onSubmi
   return (
     <BaseModal title="Log Disposition" isOpen={isOpen} onClose={onClose}>
       <form onSubmit={(e) => { e.preventDefault(); onSubmit({ sell_price: sellPrice }); onClose(); }} className="space-y-4">
-        <InputField label="Actual Sold Price ($)" type="number" step="0.01" required value={sellPrice} onChange={e => setSellPrice(parseFloat(e.target.value))} />
+        <InputField label="Actual Sold Price ($)" type="number" step="0.01" required value={sellPrice} onChange={e => setSellPrice(parseFloat(e.target.value) || 0)} />
         <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Mark as Sold</button>
       </form>
     </BaseModal>

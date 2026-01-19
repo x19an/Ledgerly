@@ -1,3 +1,4 @@
+
 export enum AccountStatus {
   WATCHLIST = 'watchlist',
   PURCHASED = 'purchased',
@@ -9,6 +10,8 @@ export interface Account {
   id: number;
   identifier: string;
   link?: string;
+  thumbnail_url?: string;
+  category?: string;
   status: AccountStatus;
   expected_price?: number;
   potential_income?: number;
@@ -21,6 +24,7 @@ export interface Account {
   account_2nd_password?: string;
   notes?: string;
   created_at: string;
+  updated_at: string;
   // Joins
   buy_price?: number;
   sell_price?: number;
@@ -31,7 +35,7 @@ export interface SummaryStats {
   total_spent: number;
   total_earned: number;
   total_lost: number;
-  net_profit: number; // Realized profit
+  net_profit: number; 
   potential_revenue: number;
   counts: {
     watchlist: number;
@@ -39,11 +43,14 @@ export interface SummaryStats {
     sold: number;
     losses: number;
   };
+  // Trend simulation data
+  profit_trend: number[]; 
 }
 
 export interface CreateAccountPayload {
   identifier: string;
   link?: string;
+  category?: string;
   expected_price?: number;
   notes?: string;
 }

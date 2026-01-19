@@ -1,3 +1,4 @@
+
 import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
 import path from 'path';
@@ -10,7 +11,6 @@ let dbInstance: Database | null = null;
 export const getDB = async (): Promise<Database> => {
   if (dbInstance) return dbInstance;
 
-  // Ensure db directory exists
   const dbDir = path.join(__dirname, 'db');
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
@@ -21,7 +21,6 @@ export const getDB = async (): Promise<Database> => {
     driver: sqlite3.Database
   });
 
-  // Enable foreign keys
   await db.run('PRAGMA foreign_keys = ON');
 
   await db.exec(`
@@ -29,6 +28,8 @@ export const getDB = async (): Promise<Database> => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       identifier TEXT NOT NULL,
       link TEXT,
+      thumbnail_url TEXT,
+      category TEXT,
       status TEXT CHECK(status IN ('watchlist', 'purchased', 'sold', 'losses')) DEFAULT 'watchlist',
       expected_price REAL DEFAULT 0,
       potential_income REAL DEFAULT 0,
@@ -40,7 +41,8 @@ export const getDB = async (): Promise<Database> => {
       account_2nd_email TEXT,
       account_2nd_password TEXT,
       notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS transactions (
@@ -51,6 +53,13 @@ export const getDB = async (): Promise<Database> => {
       transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE
     );
+
+    -- Trigger to update updated_at
+    CREATE TRIGGER IF NOT EXISTS update_account_timestamp 
+    AFTER UPDATE ON accounts
+    BEGIN
+      UPDATE accounts SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+    END;
   `);
 
   dbInstance = db;

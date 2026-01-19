@@ -72,5 +72,12 @@ export const api = {
           method: 'DELETE',
       });
       return handleResponse<void>(res);
+  },
+
+  recalculate: async (): Promise<void> => {
+      const res = await fetch(`${API_BASE}/recalculate`, {
+          method: 'POST',
+      });
+      return handleResponse<void>(res);
   }
 };

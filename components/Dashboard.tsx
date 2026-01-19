@@ -1,11 +1,12 @@
 import React from 'react';
 import { SummaryStats } from '../types';
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, Wallet } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, Wallet, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface DashboardProps {
   stats: SummaryStats | null;
   loading: boolean;
+  onRecalculate?: () => void;
 }
 
 const StatCard: React.FC<{
@@ -13,10 +14,10 @@ const StatCard: React.FC<{
   value: string;
   icon: React.ReactNode;
   colorClass: string; // e.g., "text-blue-600"
-  darkColorClass?: string;
   subtext?: string;
   index: number;
-}> = ({ title, value, icon, colorClass, subtext, index }) => {
+  action?: React.ReactNode;
+}> = ({ title, value, icon, colorClass, subtext, index, action }) => {
     
   // Extract base color name for background opacity logic (simple parsing)
   const baseColor = colorClass.replace('text-', '').split('-')[0]; // e.g. "emerald"
@@ -27,10 +28,17 @@ const StatCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.4, type: "spring", stiffness: 100 }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-800 flex items-start justify-between transition-all"
+      className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-800 flex items-start justify-between transition-all relative group"
     >
       <div>
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">{title}</p>
+        <div className="flex items-center gap-2">
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">{title}</p>
+            {action && (
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    {action}
+                </div>
+            )}
+        </div>
         <h3 className={`text-2xl font-bold mt-2 ${colorClass} dark:text-white`}>{value}</h3>
         {subtext && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{subtext}</p>}
       </div>
@@ -41,7 +49,7 @@ const StatCard: React.FC<{
   );
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ stats, loading }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ stats, loading, onRecalculate }) => {
   if (loading || !stats) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
@@ -71,6 +79,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, loading }) => {
         value={formatCurrency(stats.total_spent)}
         icon={<Wallet />}
         colorClass="text-slate-600"
+        action={
+            onRecalculate && (
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onRecalculate(); }}
+                    className="p-0.5 bg-slate-100 dark:bg-slate-800 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500"
+                    title="Recalculate / Clean Data"
+                >
+                    <RotateCcw className="w-3 h-3" />
+                </button>
+            )
+        }
       />
       <StatCard
         index={2}

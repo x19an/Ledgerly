@@ -3,7 +3,7 @@ import { api } from './services/api';
 import { Account, AccountStatus, SummaryStats, CreateAccountPayload, PurchasePayload, SellPayload, LossPayload } from './types';
 import { Dashboard } from './components/Dashboard';
 import { AccountTable } from './components/AccountTable';
-import { CreateAccountModal, PurchaseModal, SellModal, LossModal } from './components/Modals';
+import { CreateAccountModal, PurchaseModal, SellModal, LossModal, AccountDetailsModal } from './components/Modals';
 import { Plus, LayoutDashboard, Moon, Sun, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,6 +36,7 @@ export default function App() {
 
   // Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [isSellOpen, setIsSellOpen] = useState(false);
@@ -94,7 +95,29 @@ export default function App() {
   const handleDelete = async (id: number) => {
       await api.deleteAccount(id);
       fetchData(true);
-  }
+  };
+
+  const handleUpdateDetails = async (id: number, data: Partial<Account>) => {
+      await api.updateAccount(id, data);
+      fetchData(true);
+  };
+  
+  const handleRecalculate = async () => {
+      setRefreshing(true);
+      try {
+        await api.recalculate();
+        await fetchData(true);
+      } catch (err) {
+          console.error(err);
+      } finally {
+          setRefreshing(false);
+      }
+  };
+
+  const handleView = (account: Account) => {
+      setSelectedAccount(account);
+      setIsDetailsOpen(true);
+  };
 
   const tabs = [
     { id: AccountStatus.WATCHLIST, label: 'Watchlist' },
@@ -154,7 +177,7 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Dashboard */}
-        <Dashboard stats={summary} loading={loading && !summary} />
+        <Dashboard stats={summary} loading={loading && !summary} onRecalculate={handleRecalculate} />
 
         {/* Tabs */}
         <div className="border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto scrollbar-hide">
@@ -207,6 +230,7 @@ export default function App() {
                 onSell={(acc) => { setSelectedAccount(acc); setIsSellOpen(true); }}
                 onLoss={(acc) => { setSelectedAccount(acc); setIsLossOpen(true); }}
                 onDelete={handleDelete}
+                onView={handleView}
                 />
             </motion.div>
         </AnimatePresence>
@@ -233,6 +257,13 @@ export default function App() {
         isOpen={isLossOpen}
         onClose={() => setIsLossOpen(false)}
         onSubmit={handleLoss}
+      />
+      
+      <AccountDetailsModal
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        account={selectedAccount}
+        onSave={handleUpdateDetails}
       />
     </div>
   );

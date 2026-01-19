@@ -21,6 +21,9 @@ export const getDB = async (): Promise<Database> => {
     driver: sqlite3.Database
   });
 
+  // Enable foreign keys
+  await db.run('PRAGMA foreign_keys = ON');
+
   await db.exec(`
     CREATE TABLE IF NOT EXISTS accounts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

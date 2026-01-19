@@ -51,14 +51,27 @@ router.put('/accounts/:id', async (req, res) => {
     try {
         const db = await getDB();
         const { id } = req.params;
-        const { identifier, link, notes } = req.body;
-        // Basic update for details
+        const updates = req.body;
+        
+        // Remove id if present in body to avoid updating primary key
+        delete updates.id;
+        delete updates.created_at; 
+        
+        const keys = Object.keys(updates);
+        if (keys.length === 0) {
+            return res.json({ success: true }); // Nothing to update
+        }
+
+        const setClause = keys.map(key => `${key} = ?`).join(', ');
+        const values = keys.map(key => updates[key]);
+        
         await db.run(
-            `UPDATE accounts SET identifier = ?, link = ?, notes = ? WHERE id = ?`,
-            [identifier, link, notes, id]
+            `UPDATE accounts SET ${setClause} WHERE id = ?`,
+            [...values, id]
         );
         res.json({ success: true });
     } catch(error) {
+        console.error(error);
         res.status(500).json({ error: 'Update failed' });
     }
 });
@@ -138,6 +151,19 @@ router.post('/accounts/:id/loss', async (req, res) => {
   }
 });
 
+// POST Recalculate (Maintenance)
+router.post('/recalculate', async (req, res) => {
+    try {
+        const db = await getDB();
+        // Clean up orphaned transactions that might exist if FKs weren't enforced previously
+        await db.run('DELETE FROM transactions WHERE account_id NOT IN (SELECT id FROM accounts)');
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Recalculation failed' });
+    }
+});
+
 // GET Summary
 router.get('/summary', async (req, res) => {
   try {
@@ -154,10 +180,17 @@ router.get('/summary', async (req, res) => {
             WHERE a3.status = 'losses'
         ) as total_lost,
         (
-            SELECT COALESCE(SUM(t2.sell_price - t2.buy_price), 0)
-            FROM transactions t2
-            JOIN accounts a2 ON t2.account_id = a2.id
-            WHERE a2.status = 'sold'
+            (
+                SELECT COALESCE(SUM(t2.sell_price - t2.buy_price), 0)
+                FROM transactions t2
+                JOIN accounts a2 ON t2.account_id = a2.id
+                WHERE a2.status = 'sold'
+            ) - (
+                SELECT COALESCE(SUM(t4.buy_price), 0)
+                FROM transactions t4
+                JOIN accounts a4 ON t4.account_id = a4.id
+                WHERE a4.status = 'losses'
+            )
         ) as net_profit,
         (
             SELECT COALESCE(SUM(potential_income), 0)

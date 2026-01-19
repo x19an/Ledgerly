@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Save, Lock, Mail, User } from 'lucide-react';
 import { Account, CreateAccountPayload, PurchasePayload, SellPayload, LossPayload } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -8,9 +8,10 @@ interface BaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  maxWidthClass?: string;
 }
 
-const BaseModal: React.FC<BaseModalProps> = ({ title, isOpen, onClose, children }) => {
+const BaseModal: React.FC<BaseModalProps> = ({ title, isOpen, onClose, children, maxWidthClass = 'max-w-md' }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -21,7 +22,7 @@ const BaseModal: React.FC<BaseModalProps> = ({ title, isOpen, onClose, children 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/40 dark:bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/40 dark:bg-black/80 backdrop-blur-sm"
           />
           
           {/* Modal Content */}
@@ -31,9 +32,9 @@ const BaseModal: React.FC<BaseModalProps> = ({ title, isOpen, onClose, children 
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", duration: 0.5 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden pointer-events-auto border border-slate-100 dark:border-slate-800"
+              className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full ${maxWidthClass} overflow-hidden pointer-events-auto border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]`}
             >
-              <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900">
                 <h3 className="font-semibold text-slate-900 dark:text-white">{title}</h3>
                 <button 
                   onClick={onClose} 
@@ -42,7 +43,7 @@ const BaseModal: React.FC<BaseModalProps> = ({ title, isOpen, onClose, children 
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-4">{children}</div>
+              <div className="p-6 overflow-y-auto custom-scrollbar">{children}</div>
             </motion.div>
           </div>
         </>
@@ -52,15 +53,175 @@ const BaseModal: React.FC<BaseModalProps> = ({ title, isOpen, onClose, children 
 };
 
 // --- Input Component Helper ---
-const InputField = ({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) => (
+const InputField = ({ label, icon, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string, icon?: React.ReactNode }) => (
   <div>
     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
-    <input
-      {...props}
-      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-    />
+    <div className="relative">
+      {icon && (
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          {icon}
+        </div>
+      )}
+      <input
+        {...props}
+        className={`w-full ${icon ? 'pl-10' : 'px-3'} px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors`}
+      />
+    </div>
   </div>
 );
+
+// --- Account Details Modal (View/Edit) ---
+export const AccountDetailsModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  account: Account | null;
+  onSave: (id: number, data: Partial<Account>) => void;
+}> = ({ isOpen, onClose, account, onSave }) => {
+  const [formData, setFormData] = useState<Partial<Account>>({});
+
+  useEffect(() => {
+    if (account) {
+      setFormData({
+        identifier: account.identifier,
+        link: account.link || '',
+        email: account.email || '', // OGE Email
+        password: account.password || '', // OGE Password
+        account_email: account.account_email || '', // Game Email
+        account_password: account.account_password || '', // Game Pass
+        account_2nd_email: account.account_2nd_email || '', // Recovery Email
+        account_2nd_password: account.account_2nd_password || '', // Recovery Pass
+        notes: account.notes || '',
+      });
+    }
+  }, [account, isOpen]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (account) {
+      onSave(account.id, formData);
+      onClose();
+    }
+  };
+
+  return (
+    <BaseModal title="Account Details" isOpen={isOpen} onClose={onClose} maxWidthClass="max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* Basic Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <InputField 
+            label="Account Identifier"
+            value={formData.identifier || ''}
+            onChange={e => setFormData({ ...formData, identifier: e.target.value })}
+            placeholder="e.g. Fortnite Account #123"
+          />
+          <InputField 
+            label="Link / URL"
+            value={formData.link || ''}
+            onChange={e => setFormData({ ...formData, link: e.target.value })}
+            placeholder="https://..."
+          />
+        </div>
+
+        <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
+
+        {/* Credentials Section */}
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Credentials</h4>
+        
+        {/* Game Account */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-4">
+          <h5 className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase">Game Account Login</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField 
+              label="Email / Username"
+              icon={<User className="w-4 h-4" />}
+              value={formData.account_email || ''}
+              onChange={e => setFormData({ ...formData, account_email: e.target.value })}
+              placeholder="Game Login"
+            />
+            <InputField 
+              label="Password"
+              icon={<Lock className="w-4 h-4" />}
+              type="text" // Visible by default for easy copying as per user context
+              value={formData.account_password || ''}
+              onChange={e => setFormData({ ...formData, account_password: e.target.value })}
+              placeholder="Game Password"
+            />
+          </div>
+        </div>
+
+        {/* OGE */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-4">
+          <h5 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">Original Email (OGE)</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField 
+              label="Email Address"
+              icon={<Mail className="w-4 h-4" />}
+              value={formData.email || ''}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              placeholder="OGE Address"
+            />
+            <InputField 
+              label="Password"
+              icon={<Lock className="w-4 h-4" />}
+              type="text"
+              value={formData.password || ''}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              placeholder="OGE Password"
+            />
+          </div>
+        </div>
+
+        {/* Recovery / 2nd Email */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-4">
+          <h5 className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase">Recovery / 2nd Email</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField 
+              label="Email Address"
+              icon={<Mail className="w-4 h-4" />}
+              value={formData.account_2nd_email || ''}
+              onChange={e => setFormData({ ...formData, account_2nd_email: e.target.value })}
+              placeholder="Recovery Email"
+            />
+            <InputField 
+              label="Password"
+              icon={<Lock className="w-4 h-4" />}
+              type="text"
+              value={formData.account_2nd_password || ''}
+              onChange={e => setFormData({ ...formData, account_2nd_password: e.target.value })}
+              placeholder="Recovery Password"
+            />
+          </div>
+        </div>
+
+        <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
+
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
+          <textarea
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+            rows={3}
+            value={formData.notes || ''}
+            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+            placeholder="Any extra info..."
+          />
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <button 
+            type="submit" 
+            className="flex items-center space-x-2 bg-blue-600 dark:bg-blue-500 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-medium transition-colors shadow-lg shadow-blue-500/20"
+          >
+            <Save className="w-4 h-4" />
+            <span>Save Changes</span>
+          </button>
+        </div>
+      </form>
+    </BaseModal>
+  );
+};
+
 
 // --- Create Account Modal ---
 export const CreateAccountModal: React.FC<{

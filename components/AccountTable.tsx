@@ -11,6 +11,7 @@ interface AccountTableProps {
   onSell: (account: Account) => void;
   onLoss: (account: Account) => void;
   onDelete: (id: number) => void;
+  onView: (account: Account) => void;
 }
 
 export const AccountTable: React.FC<AccountTableProps> = ({ 
@@ -19,7 +20,8 @@ export const AccountTable: React.FC<AccountTableProps> = ({
   onPurchase, 
   onSell, 
   onLoss,
-  onDelete 
+  onDelete,
+  onView
 }) => {
   const formatCurrency = (val?: number) => 
     val !== undefined ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val) : '-';
@@ -65,12 +67,13 @@ export const AccountTable: React.FC<AccountTableProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.05 }}
-                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                onClick={() => onView(acc)}
+                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
               >
                 <td className="px-6 py-4">
                   <div className="font-medium text-slate-900 dark:text-slate-100">{acc.identifier}</div>
                   {acc.link && (
-                    <a href={acc.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center mt-1">
+                    <a href={acc.link} onClick={e => e.stopPropagation()} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center mt-1">
                       Link <ExternalLink className="w-3 h-3 ml-1" />
                     </a>
                   )}
@@ -111,7 +114,7 @@ export const AccountTable: React.FC<AccountTableProps> = ({
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => onPurchase(acc)}
+                        onClick={(e) => { e.stopPropagation(); onPurchase(acc); }}
                         className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                         title="Purchase"
                       >
@@ -123,7 +126,7 @@ export const AccountTable: React.FC<AccountTableProps> = ({
                         <motion.button
                            whileHover={{ scale: 1.1 }}
                            whileTap={{ scale: 0.9 }}
-                          onClick={() => onSell(acc)}
+                          onClick={(e) => { e.stopPropagation(); onSell(acc); }}
                           className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                           title="Mark Sold"
                         >
@@ -132,7 +135,7 @@ export const AccountTable: React.FC<AccountTableProps> = ({
                         <motion.button
                            whileHover={{ scale: 1.1 }}
                            whileTap={{ scale: 0.9 }}
-                          onClick={() => onLoss(acc)}
+                          onClick={(e) => { e.stopPropagation(); onLoss(acc); }}
                           className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                           title="Mark Loss"
                         >
@@ -143,7 +146,8 @@ export const AccountTable: React.FC<AccountTableProps> = ({
                      <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => {
+                        onClick={(e) => {
+                            e.stopPropagation();
                             if(window.confirm('Are you sure you want to delete this account permanently?')) {
                                 onDelete(acc.id);
                             }

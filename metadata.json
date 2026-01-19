@@ -1,0 +1,6 @@
+
+{
+  "name": "Ledgerly - Account Reselling Manager",
+  "description": "A high-performance account reselling tracker with local SQLite persistence. Tracks digital assets with real-time profit analytics and potential income forecasting.",
+  "requestFramePermissions": []
+}

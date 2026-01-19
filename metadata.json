@@ -1,0 +1,5 @@
+{
+  "name": "Ledgerly",
+  "description": "A web-first account reselling tracker with SQLite persistence, managing lifecycle from Watchlist to Sold/Losses.",
+  "requestFramePermissions": []
+}

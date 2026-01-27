@@ -5,7 +5,7 @@ import { Account, AccountStatus, SummaryStats, CreateAccountPayload, PurchasePay
 import { Dashboard } from './components/Dashboard.tsx';
 import { AccountTable } from './components/AccountTable.tsx';
 import { CreateAccountModal, PurchaseModal, SellModal, LossModal, AccountDetailsModal } from './components/Modals.tsx';
-import { Plus, Moon, Sun, RefreshCw, Layers, Database } from 'lucide-react';
+import { Plus, Moon, Sun, RefreshCw, Layers, Database, Link as LinkIcon, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function App() {
@@ -15,7 +15,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDbMenuOpen, setIsDbMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dbMenuRef = useRef<HTMLDivElement>(null);
   
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -35,6 +37,16 @@ export default function App() {
     }
   }, [isDark]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dbMenuRef.current && !dbMenuRef.current.contains(event.target as Node)) {
+        setIsDbMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
@@ -50,11 +62,9 @@ export default function App() {
         api.getAccounts(activeTab),
         api.getSummary()
       ]);
-      
       const filtered = searchTerm 
         ? accs.filter(a => a.identifier.toLowerCase().includes(searchTerm.toLowerCase()) || (a.category && a.category.toLowerCase().includes(searchTerm.toLowerCase())))
         : accs;
-
       setAccounts(filtered);
       setSummary(stats);
     } catch (error) {
@@ -75,17 +85,28 @@ export default function App() {
   const handleLoss = async (data: LossPayload) => { if (selectedAccount) { await api.reportLoss(selectedAccount.id, data); fetchData(true); } };
   const handleDelete = async (id: number) => { await api.deleteAccount(id); fetchData(true); };
   const handleUpdateDetails = async (id: number, data: Partial<Account>) => { await api.updateAccount(id, data); fetchData(true); };
-  
   const handleView = (account: Account) => { setSelectedAccount(account); setIsDetailsOpen(true); };
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
+  const handleLinkDatabase = async () => {
+    setIsDbMenuOpen(false);
+    try {
+      const result = await api.pickDatabase();
+      if (result.success) {
+        alert('Database linked successfully!');
+        window.location.reload();
+      }
+    } catch (err: any) {
+      alert('Error linking database: ' + err.message);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    if (!confirm('This will overwrite your current app database with the selected file. Continue?')) {
+        e.target.value = '';
+        return;
+    }
     setRefreshing(true);
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -93,7 +114,7 @@ export default function App() {
       try {
         await api.importDatabase(base64);
         alert('Database restored successfully!');
-        fetchData(true);
+        window.location.reload();
       } catch (err: any) {
         alert('Failed to import database: ' + err.message);
       } finally {
@@ -101,7 +122,7 @@ export default function App() {
       }
     };
     reader.readAsDataURL(file);
-    e.target.value = ''; // Reset input
+    e.target.value = '';
   };
 
   const tabs = [
@@ -122,14 +143,52 @@ export default function App() {
             <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tighter">Ledgerly<span className="text-blue-600">.</span></h1>
           </div>
           <div className="flex items-center space-x-2">
+            <div className="relative" ref={dbMenuRef}>
+              <button 
+                onClick={() => setIsDbMenuOpen(!isDbMenuOpen)} 
+                className="p-2 text-slate-500 hover:text-blue-600 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <Database className="w-4 h-4" />
+              </button>
+              
+              <AnimatePresence>
+                {isDbMenuOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden z-50"
+                  >
+                    <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+                      <p className="text-[10px] font-bold uppercase text-slate-400 px-3 py-1">Database Options</p>
+                    </div>
+                    <button 
+                      onClick={handleLinkDatabase}
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-3 transition-colors"
+                    >
+                      <LinkIcon className="w-4 h-4 text-blue-500" />
+                      <div>
+                        <p className="font-semibold">Link Existing DB</p>
+                        <p className="text-[10px] text-slate-500">Choose a file on your PC</p>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={() => { fileInputRef.current?.click(); setIsDbMenuOpen(false); }}
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-3 transition-colors border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <Download className="w-4 h-4 text-emerald-500" />
+                      <div>
+                        <p className="font-semibold">Restore / Upload</p>
+                        <p className="text-[10px] text-slate-500">Overwrite app data</p>
+                      </div>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".db" className="hidden" />
-            <button 
-              onClick={handleImportClick} 
-              title="Restore database from .db file"
-              className="p-2 text-slate-500 hover:text-blue-600 transition-colors"
-            >
-              <Database className="w-4 h-4" />
-            </button>
+            
             <button onClick={() => fetchData(true)} className="p-2 text-slate-500 hover:text-blue-600 transition-colors">
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-blue-600' : ''}`} />
             </button>

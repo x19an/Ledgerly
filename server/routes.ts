@@ -1,8 +1,9 @@
 
 import { Router } from 'express';
-import { getDB, closeDB } from './database';
+import { getDB, closeDB, getDatabasePath, saveSettings, getSettings } from './database';
 import fs from 'fs';
 import path from 'path';
+import { Buffer } from 'buffer';
 
 const router = Router();
 
@@ -11,7 +12,6 @@ router.get('/accounts/check-duplicate', async (req, res) => {
     const db = await getDB();
     const { link } = req.query;
     if (!link) return res.json({ exists: false });
-    
     const existing = await db.get('SELECT id, identifier FROM accounts WHERE link = ? LIMIT 1', [link]);
     res.json({ exists: !!existing, identifier: existing?.identifier });
   } catch (error) {
@@ -29,24 +29,15 @@ router.get('/accounts', async (req, res) => {
       LEFT JOIN transactions t ON a.id = t.account_id
     `;
     const params: any[] = [];
-    
     const conditions: string[] = [];
-    if (status) {
-      conditions.push(`a.status = ?`);
-      params.push(status);
-    }
+    if (status) { conditions.push(`a.status = ?`); params.push(status); }
     if (search) {
       conditions.push(`(a.identifier LIKE ? OR a.category LIKE ? OR a.notes LIKE ?)`);
       const searchParam = `%${search}%`;
       params.push(searchParam, searchParam, searchParam);
     }
-
-    if (conditions.length > 0) {
-      query += ` WHERE ` + conditions.join(' AND ');
-    }
-    
+    if (conditions.length > 0) query += ` WHERE ` + conditions.join(' AND ');
     query += ` ORDER BY a.updated_at DESC`;
-    
     const accounts = await db.all(query, params);
     res.json(accounts);
   } catch (error) {
@@ -58,12 +49,10 @@ router.post('/accounts', async (req, res) => {
   try {
     const db = await getDB();
     const { identifier, link, category, expected_price, notes } = req.body;
-    
     const result = await db.run(
       `INSERT INTO accounts (identifier, link, category, expected_price, notes, status) VALUES (?, ?, ?, ?, ?, 'watchlist')`,
       [identifier, link, category, expected_price, notes]
     );
-    
     res.status(201).json({ id: result.lastID, identifier, status: 'watchlist' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to create account' });
@@ -75,17 +64,13 @@ router.put('/accounts/:id', async (req, res) => {
         const db = await getDB();
         const id = parseInt(req.params.id);
         const updates = req.body;
-        
         delete updates.id;
         delete updates.created_at; 
         delete updates.updated_at;
-        
         const keys = Object.keys(updates);
         if (keys.length === 0) return res.json({ success: true });
-
         const setClause = keys.map(key => `${key} = ?`).join(', ');
         const values = keys.map(key => updates[key]);
-        
         await db.run(`UPDATE accounts SET ${setClause} WHERE id = ?`, [...values, id]);
         res.json({ success: true });
     } catch(error) {
@@ -109,7 +94,6 @@ router.post('/accounts/:id/purchase', async (req, res) => {
     const db = await getDB();
     const id = parseInt(req.params.id);
     const { buy_price, potential_income } = req.body;
-
     await db.run(`UPDATE accounts SET status = 'purchased', potential_income = ? WHERE id = ?`, [potential_income, id]);
     await db.run(
       `INSERT INTO transactions (account_id, buy_price) VALUES (?, ?) ON CONFLICT(account_id) DO UPDATE SET buy_price = ?`,
@@ -126,7 +110,6 @@ router.post('/accounts/:id/sell', async (req, res) => {
     const db = await getDB();
     const id = parseInt(req.params.id);
     const { sell_price } = req.body;
-
     await db.run(`UPDATE accounts SET status = 'sold' WHERE id = ?`, [id]);
     await db.run(`UPDATE transactions SET sell_price = ? WHERE account_id = ?`, [sell_price, id]);
     res.json({ success: true });
@@ -149,7 +132,6 @@ router.post('/accounts/:id/loss', async (req, res) => {
 router.get('/summary', async (req, res) => {
   try {
     const db = await getDB();
-    
     const stats = await db.get(`
       SELECT
         COALESCE(SUM(t.buy_price), 0) as total_spent,
@@ -160,16 +142,39 @@ router.get('/summary', async (req, res) => {
         (SELECT COALESCE(SUM(potential_income), 0) FROM accounts WHERE status = 'purchased') as potential_revenue
       FROM transactions t
     `);
-
     const countsResult = await db.all(`SELECT status, COUNT(*) as count FROM accounts GROUP BY status`);
     const counts = { watchlist: 0, purchased: 0, sold: 0, losses: 0 };
     countsResult.forEach(row => { if (counts.hasOwnProperty(row.status)) (counts as any)[row.status] = row.count; });
-
     const profit_trend = [30, 45, 35, 60, 50, 80, stats.net_profit || 0];
-
     res.json({ ...stats, counts, profit_trend });
   } catch (error) {
     res.status(500).json({ error: 'Summary failed' });
+  }
+});
+
+/**
+ * Native Database Picker
+ * Only works when running inside Electron.
+ */
+router.post('/pick-database', async (req, res) => {
+  try {
+    const { dialog } = require('electron');
+    const result = dialog.showOpenDialogSync({
+      title: 'Select Ledgerly Database',
+      properties: ['openFile'],
+      filters: [{ name: 'SQLite Database', extensions: ['db'] }]
+    });
+
+    if (result && result.length > 0) {
+      const selectedPath = result[0];
+      await closeDB();
+      saveSettings({ ...getSettings(), databasePath: selectedPath });
+      await getDB();
+      return res.json({ success: true, path: selectedPath });
+    }
+    res.json({ success: false });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -177,14 +182,13 @@ router.post('/import-db', async (req, res) => {
   try {
     const { base64Data } = req.body;
     if (!base64Data) return res.status(400).json({ error: 'Missing data' });
-
     const buffer = Buffer.from(base64Data, 'base64');
-    const dbPath = path.join(process.cwd(), 'db', 'ledgerly.db');
-
+    const targetPath = getDatabasePath();
     await closeDB();
-    fs.writeFileSync(dbPath, buffer);
+    fs.writeFileSync(targetPath, buffer);
+    // Ensure the settings remember this path even if it's the default one
+    saveSettings({ ...getSettings(), databasePath: targetPath });
     await getDB();
-
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

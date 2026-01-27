@@ -1,13 +1,42 @@
+
 {
   "name": "ledgerly",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Account reselling tracker",
-  "main": "server/index.ts",
+  "main": "dist-electron/electron-main.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "ts-node server/index.ts",
     "client": "vite",
-    "build": "vite build"
+    "build:electron": "tsc --project tsconfig.electron.json",
+    "build": "vite build && npm run build:electron",
+    "electron:dev": "concurrently -k \"npm run client\" \"tsc --project tsconfig.electron.json --watch\" \"wait-on http://localhost:5173 dist-electron/electron-main.js && electron .\"",
+    "prebuild:electron": "taskkill /f /im Ledgerly.exe /t >nul 2>&1 || exit /b 0",
+    "electron:build": "npm run prebuild:electron && npm run build && electron-builder",
+    "dist": "npm run electron:build"
+  },
+  "build": {
+    "appId": "com.ledgerly.app",
+    "productName": "Ledgerly",
+    "directories": {
+      "output": "release"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "YOUR_GITHUB_USERNAME",
+        "repo": "YOUR_REPO_NAME"
+      }
+    ],
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "public/icon.ico"
+    }
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -17,7 +46,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "electron-updater": "^6.1.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -27,8 +57,11 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.2.1",
     "concurrently": "^8.2.2",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "wait-on": "^8.0.1"
   }
 }

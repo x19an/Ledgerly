@@ -1,9 +1,13 @@
 
 {
   "name": "ledgerly",
-  "version": "1.0.1",
-  "description": "Account reselling tracker",
+  "version": "1.0.3",
+  "description": "Account reselling tracker with SQLite persistence",
   "main": "dist-electron/electron-main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/x19an/ledgerly.git"
+  },
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "ts-node server/index.ts",
@@ -24,8 +28,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "YOUR_GITHUB_USERNAME",
-        "repo": "YOUR_REPO_NAME"
+        "owner": "x19an",
+        "repo": "ledgerly"
       }
     ],
     "files": [
@@ -36,6 +40,17 @@
     "win": {
       "target": "portable",
       "icon": "public/icon.ico"
+    },
+    "mac": {
+      "icon": "public/icon.icns",
+      "category": "public.app-category.finance"
+    },
+    "linux": {
+      "icon": "public/icon.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     }
   },
   "dependencies": {

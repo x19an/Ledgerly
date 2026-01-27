@@ -1,22 +1,21 @@
 
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import { startServer } from './server/index';
+import { autoUpdater } from 'electron-updater';
 
 let mainWindow: BrowserWindow | null = null;
 
 async function createWindow() {
-  // Start the backend server first
   await startServer();
 
-  // Use native Electron property to check for dev environment
-  // app.isPackaged is false when running in development
   const isDev = !app.isPackaged;
 
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 850,
     show: false,
+    icon: path.join(__dirname, '../public/icon.png'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -34,10 +33,35 @@ async function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
+    if (!isDev) {
+      autoUpdater.checkForUpdatesAndNotify();
+    }
   });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // --- Auto Updater Logic ---
+  
+  autoUpdater.on('update-available', (info) => {
+    mainWindow?.webContents.send('update_available', info);
+  });
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    mainWindow?.webContents.send('download_progress', progressObj.percent);
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    mainWindow?.webContents.send('update_downloaded');
+  });
+
+  ipcMain.on('restart_app', () => {
+    autoUpdater.quitAndInstall();
+  });
+
+  ipcMain.on('check_for_updates', () => {
+    autoUpdater.checkForUpdates();
   });
 }
 

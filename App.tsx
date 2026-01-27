@@ -5,7 +5,8 @@ import { Account, AccountStatus, SummaryStats, CreateAccountPayload, PurchasePay
 import { Dashboard } from './components/Dashboard.tsx';
 import { AccountTable } from './components/AccountTable.tsx';
 import { CreateAccountModal, PurchaseModal, SellModal, LossModal, AccountDetailsModal } from './components/Modals.tsx';
-import { Plus, Moon, Sun, RefreshCw, Layers, Database, Link as LinkIcon, Download } from 'lucide-react';
+import { UpdateNotification } from './components/UpdateNotification.tsx';
+import { Plus, Moon, Sun, RefreshCw, Layers, Database, Link as LinkIcon, Download, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDbMenuOpen, setIsDbMenuOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dbMenuRef = useRef<HTMLDivElement>(null);
   
@@ -67,8 +69,10 @@ export default function App() {
         : accs;
       setAccounts(filtered);
       setSummary(stats);
+      setIsOnline(true);
     } catch (error) {
       console.error("Failed to fetch data", error);
+      setIsOnline(false);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -140,15 +144,16 @@ export default function App() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
               <Layers className="w-5 h-5 text-white" />
             </motion.div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tighter">Ledgerly<span className="text-blue-600">.</span></h1>
+            <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Ledgerly<span className="text-blue-600">.</span></h1>
           </div>
           <div className="flex items-center space-x-2">
             <div className="relative" ref={dbMenuRef}>
               <button 
                 onClick={() => setIsDbMenuOpen(!isDbMenuOpen)} 
-                className="p-2 text-slate-500 hover:text-blue-600 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                className={`p-2 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 ${isDbMenuOpen ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-400'}`}
               >
                 <Database className="w-4 h-4" />
+                <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`} />
               </button>
               
               <AnimatePresence>
@@ -157,29 +162,34 @@ export default function App() {
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden z-50"
+                    className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 p-1"
                   >
-                    <div className="p-2 border-b border-slate-100 dark:border-slate-800">
-                      <p className="text-[10px] font-bold uppercase text-slate-400 px-3 py-1">Database Options</p>
+                    <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Database Sync</p>
+                      {isOnline && <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-500"><CheckCircle2 className="w-3 h-3" /> Online</span>}
                     </div>
                     <button 
                       onClick={handleLinkDatabase}
-                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-3 transition-colors"
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl flex items-center space-x-3 transition-colors group"
                     >
-                      <LinkIcon className="w-4 h-4 text-blue-500" />
+                      <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600">
+                        <LinkIcon className="w-4 h-4" />
+                      </div>
                       <div>
-                        <p className="font-semibold">Link Existing DB</p>
-                        <p className="text-[10px] text-slate-500">Choose a file on your PC</p>
+                        <p className="font-bold text-slate-900 dark:text-white">Link External File</p>
+                        <p className="text-[10px] text-slate-400">Sync with existing .db file</p>
                       </div>
                     </button>
                     <button 
                       onClick={() => { fileInputRef.current?.click(); setIsDbMenuOpen(false); }}
-                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center space-x-3 transition-colors border-t border-slate-100 dark:border-slate-800"
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl flex items-center space-x-3 transition-colors mt-1"
                     >
-                      <Download className="w-4 h-4 text-emerald-500" />
+                      <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600">
+                        <Download className="w-4 h-4" />
+                      </div>
                       <div>
-                        <p className="font-semibold">Restore / Upload</p>
-                        <p className="text-[10px] text-slate-500">Overwrite app data</p>
+                        <p className="font-bold text-slate-900 dark:text-white">Restore Backup</p>
+                        <p className="text-[10px] text-slate-400">Overwrite local storage</p>
                       </div>
                     </button>
                   </motion.div>
@@ -189,33 +199,33 @@ export default function App() {
 
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".db" className="hidden" />
             
-            <button onClick={() => fetchData(true)} className="p-2 text-slate-500 hover:text-blue-600 transition-colors">
+            <button onClick={() => fetchData(true)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-blue-600' : ''}`} />
             </button>
-            <button onClick={() => setIsDark(!isDark)} className="p-2 text-slate-500 hover:text-yellow-500 transition-colors">
+            <button onClick={() => setIsDark(!isDark)} className="p-2 text-slate-400 hover:text-amber-500 transition-colors">
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <button onClick={() => setIsAddOpen(true)} className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-md">
+            <button onClick={() => setIsAddOpen(true)} className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-black transition-all shadow-lg shadow-blue-500/20 active:scale-95">
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Item</span>
+              <span className="hidden sm:inline">ADD PRODUCT</span>
             </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Dashboard stats={summary} loading={loading && !summary} />
+        <Dashboard stats={summary} loading={loading && !summary} onRecalculate={() => fetchData(true)} />
 
         <div className="border-b border-slate-200 dark:border-slate-800 mb-6 flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative whitespace-nowrap py-4 px-6 font-bold text-xs uppercase tracking-widest transition-colors ${activeTab === tab.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
+              className={`relative whitespace-nowrap py-4 px-6 font-black text-[10px] uppercase tracking-widest transition-colors ${activeTab === tab.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               {tab.label}
               {summary && summary.counts[tab.id] > 0 && (
-                <span className={`ml-2 py-0.5 px-2 rounded text-[10px] font-bold ${activeTab === tab.id ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}>
+                <span className={`ml-2 py-0.5 px-2 rounded-full text-[9px] font-black ${activeTab === tab.id ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}>
                   {summary.counts[tab.id]}
                 </span>
               )}
@@ -239,6 +249,8 @@ export default function App() {
             </motion.div>
         </AnimatePresence>
       </main>
+
+      <UpdateNotification />
 
       <CreateAccountModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onSubmit={handleCreate} />
       <PurchaseModal isOpen={isPurchaseOpen} onClose={() => setIsPurchaseOpen(false)} onSubmit={handlePurchase} account={selectedAccount || undefined} />
